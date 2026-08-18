@@ -1,0 +1,15 @@
+services:
+  redigo:
+    build: .
+    container_name: redigo
+    ports:
+      - "6380:6380"   # deliberately not 6379, so it never collides with a real local Redis
+    volumes:
+      - redigo-data:/app/data   # AOF log persists across container restarts
+    environment:
+      - REDIGO_PORT=6380
+      - REDIGO_AOF_PATH=/app/data/redigo.aof
+    restart: unless-stopped
+
+volumes:
+  redigo-data: 
