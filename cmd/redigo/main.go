@@ -34,7 +34,7 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer conn.Close() //close the co
 	fmt.Println("New client connected from", conn.RemoteAddr())
 
 	//just prove connection works
