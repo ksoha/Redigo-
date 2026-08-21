@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
+
+	"github.com/ksoha/redigo/internal/resp"
 )
 
 func main() {
@@ -37,6 +40,25 @@ func handleConnection(conn net.Conn) {
 	defer conn.Close() //close the co
 	fmt.Println("New client connected from", conn.RemoteAddr())
 
-	//just prove connection works
-	conn.Write([]byte("Welcome to Redigo!\n"))
+	reader := bufio.NewReader(conn)
+	writer := bufio.NewWriter(conn)
+
+	//keep reading commands froms this client until thy disconnect
+	//or an error occurs
+	for {
+		//read a commanf from the client
+		args, err := resp.ReadCommand(reader)
+		if err != nil {
+			//client disconnect or send malformed info
+			//stop handling this connection
+			fmt.Println("Error reading command:", conn.RemoteAddr(), "reason:", err)
+			return
+		}
+
+		fmt.Println("recieved command: %v\n", args)
+		if err := resp.WriteSimpleString(writer, "OK"); err != nil {
+			fmt.Println("write error:", err)
+			return
+		}
+	}
 }

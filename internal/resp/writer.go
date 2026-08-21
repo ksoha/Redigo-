@@ -41,6 +41,7 @@ func WriteInteger(w *bufio.Writer, n int) error {
 // Used for things like GET(value) , SET(value)
 func WriteBulkString(w *bufio.Writer, s string) error {
 
+	//length of the string is neccessary because the client needs to know how many bytes to read for the value
 	if _, err := fmt.Fprintf(w, "$%d\r\n%s\r\n", len(s), s); err != nil {
 		return err
 	}
