@@ -9,21 +9,21 @@ import (
 //this store concurrently, so every access to 'data' must go through
 //the mutex - never access 'data' directly
 
-type store struct {
+type Store struct {
 	mu   sync.RWMutex //create the mutex in the same struct
 	data map[string]string
 }
 
 // New creates an empty, ready-tp-use store
-func New() *store {
-	return &store{
+func New() *Store {
+	return &Store{
 		data: make(map[string]string),
 	}
 }
 
 // Set stores the given key-value pair in the store, overwritting any existing value for the key
 // it recieves a pointer to the store, so it can modify the store's data in place
-func (s *store) Set(key, value string) {
+func (s *Store) Set(key, value string) {
 	s.mu.Lock() //lock the mutex before accessing the data
 
 	defer s.mu.Unlock() //unlock the mutex after accessing the data
@@ -31,7 +31,7 @@ func (s *store) Set(key, value string) {
 }
 
 // Get returns the value for the key and whether it was found
-func (s *store) Get(key string) (string, bool) {
+func (s *Store) Get(key string) (string, bool) {
 	s.mu.RLock() //shared lock for reading
 
 	defer s.mu.RUnlock() // unlock
@@ -40,7 +40,7 @@ func (s *store) Get(key string) (string, bool) {
 }
 
 // Delete removes the key-value pair from the store, if it exists
-func (s *store) Delete(key string) int {
+func (s *Store) Delete(key string) int {
 	s.mu.Lock() //lock
 
 	defer s.mu.Unlock()
@@ -53,7 +53,7 @@ func (s *store) Delete(key string) int {
 }
 
 // Exists checks if the key exists in the store
-func (s *store) Exists(key string) bool {
+func (s *Store) Exists(key string) bool {
 	s.mu.RLock() //shared lock for reading
 
 	defer s.mu.RUnlock() // unlock
