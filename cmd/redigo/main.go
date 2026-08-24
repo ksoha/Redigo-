@@ -6,7 +6,9 @@ import (
 	"log"
 	"net"
 
+	"github.com/ksoha/redigo/internal/command"
 	"github.com/ksoha/redigo/internal/resp"
+	"github.com/ksoha/redigo/internal/store"
 )
 
 func main() {
@@ -21,22 +23,26 @@ func main() {
 
 	fmt.Println("Redigo listening on port 6380")
 
+	//create one shared store for all clients to use
+	//every client will use the same store
+	s := store.New()
+
 	//loop forever waiting for incoming clients to connect
 	//allow() itself blocks so the loop doesnt consume one million times
 	//each time someone connects, add them to handleconnection in a new goroutine
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println("Error accepting connection:", err)
+
 			continue
 		}
 
-		go handleConnection(conn)
+		go handleConnection(conn, s)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, s *store.Store) {
 	defer conn.Close() //close the co
 	fmt.Println("New client connected from", conn.RemoteAddr())
 
@@ -56,8 +62,10 @@ func handleConnection(conn net.Conn) {
 		}
 
 		fmt.Println("recieved command: %v\n", args)
-		if err := resp.WriteSimpleString(writer, "OK"); err != nil {
-			fmt.Println("write error:", err)
+
+		//dispatch the command to the store and write the response back to the client \
+		if err := command.Dispatch(args, s, writer); err != nil {
+			fmt.Println("dispatch error", err)
 			return
 		}
 	}
