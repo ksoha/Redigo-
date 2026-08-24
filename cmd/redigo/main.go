@@ -61,7 +61,7 @@ func handleConnection(conn net.Conn, s *store.Store) {
 			return
 		}
 
-		fmt.Println("recieved command: %v\n", args)
+		fmt.Printf("recieved command: %v\n", args)
 
 		//dispatch the command to the store and write the response back to the client \
 		if err := command.Dispatch(args, s, writer); err != nil {
