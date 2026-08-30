@@ -11,13 +11,13 @@ import (
 
 type Store struct {
 	mu   sync.RWMutex //create the mutex in the same struct
-	data map[string]string
+	data map[string]Value
 }
 
 // New creates an empty, ready-tp-use store
 func New() *Store {
 	return &Store{
-		data: make(map[string]string),
+		data: make(map[string]Value),
 	}
 }
 
@@ -27,7 +27,7 @@ func (s *Store) Set(key, value string) {
 	s.mu.Lock() //lock the mutex before accessing the data
 
 	defer s.mu.Unlock() //unlock the mutex after accessing the data
-	s.data[key] = value
+	s.data[key] = StringValue{Value: value}
 }
 
 // Get returns the value for the key and whether it was found
@@ -36,7 +36,15 @@ func (s *Store) Get(key string) (string, bool) {
 
 	defer s.mu.RUnlock() // unlock
 	value, ok := s.data[key]
-	return value, ok
+	if !ok {
+		return "", false
+	}
+
+	stringValue, ok := value.(StringValue)
+	if !ok {
+		return "", false
+	}
+	return stringValue.Value, true
 }
 
 // Delete removes the key-value pair from the store, if it exists
