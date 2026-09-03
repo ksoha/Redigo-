@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -68,4 +69,36 @@ func (s *Store) Exists(key string) bool {
 
 	_, ok := s.data[key]
 	return ok
+}
+
+// LPush pushes a value to the left (front) of a Redis List.
+func (s *Store) LPush(key, value string) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	existingValue, exists := s.data[key]
+
+	// Case 1: the key does not exist yet.
+	if !exists {
+		list := ListValue{
+			Values: []string{value},
+		}
+
+		s.data[key] = list
+		return len(list.Values), nil
+	}
+
+	// Case 2 and 3: the key exists.
+	list, ok := existingValue.(ListValue)
+	if !ok {
+		return 0, fmt.Errorf("WRONGTYPE operation against a key holding the wrong kind of value")
+	}
+
+	// Add the new value to the front of the list.
+	list.Values = append([]string{value}, list.Values...)
+
+	// Save the updated list back into the Store.
+	s.data[key] = list
+
+	return len(list.Values), nil
 }
