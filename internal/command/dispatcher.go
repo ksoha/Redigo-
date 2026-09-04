@@ -63,6 +63,28 @@ func Dispatch(args []string, s *store.Store, w *bufio.Writer) error {
 		}
 		return resp.WriteInteger(w, 0)
 
+	case "LPUSH":
+		if len(args) != 3 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'lpush' command")
+		}
+		key, value := args[1], args[2]
+		count, err := s.LPush(key, value)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+		return resp.WriteInteger(w, count)
+
+	case "RPUSH":
+		if len(args) != 3 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'rpush' command")
+		}
+		key, value := args[1], args[2]
+		count, err := s.RPush(key, value)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+		return resp.WriteInteger(w, count)
+
 	default:
 		return resp.WriteError(w, "ERR unknown command '"+cmd+"'")
 	}
