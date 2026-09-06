@@ -2,10 +2,10 @@ package command
 
 import (
 	"bufio"
+	"strconv"
 	"strings"
 
 	"github.com/ksoha/redigo/internal/resp"
-
 	"github.com/ksoha/redigo/internal/store"
 )
 
@@ -84,6 +84,30 @@ func Dispatch(args []string, s *store.Store, w *bufio.Writer) error {
 			return resp.WriteError(w, err.Error())
 		}
 		return resp.WriteInteger(w, count)
+
+	case "LRANGE":
+		if len(args) != 4 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'lrange' command")
+		}
+
+		key := args[1]
+
+		start, err := strconv.Atoi(args[2])
+		if err != nil {
+			return resp.WriteError(w, "ERR value is not an integer or out of range")
+		}
+
+		end, err := strconv.Atoi(args[3])
+		if err != nil {
+			return resp.WriteError(w, "ERR value is not an integer or out of range")
+		}
+
+		values, err := s.LRange(key, start, end)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+
+		return resp.WriteArray(w, values)
 
 	default:
 		return resp.WriteError(w, "ERR unknown command '"+cmd+"'")

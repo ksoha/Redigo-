@@ -131,3 +131,53 @@ func (s *Store) RPush(key, value string) (int, error) {
 	s.data[key] = list
 	return len(list.Values), nil
 }
+
+// LRange returns the elements of a list between start and end indexes.
+func (s *Store) LRange(key string, start, end int) ([]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	existingValue, exists := s.data[key]
+
+	// If the key doesn't exist, Redis returns an empty list.
+	if !exists {
+		return []string{}, nil
+	}
+
+	// Make sure the value stored at this key is actually a List.
+	list, ok := existingValue.(ListValue)
+	if !ok {
+		return nil, fmt.Errorf("WRONGTYPE operation against a key holding the wrong kind of value")
+	}
+
+	length := len(list.Values)
+
+	// Convert negative indexes into normal indexes.
+	if start < 0 {
+		start = length + start
+	}
+
+	if end < 0 {
+		end = length + end
+	}
+
+	// If the requested range is completely outside the list.
+	if start >= length || end < 0 || start > end {
+		return []string{}, nil
+	}
+
+	// Clamp indexes so they stay within valid bounds.
+	if start < 0 {
+		start = 0
+	}
+
+	if end >= length {
+		end = length - 1
+	}
+
+	// end is inclusive in Redis, but Go slice ranges exclude the end,
+	// so we use end + 1.
+	result := list.Values[start : end+1]
+
+	return result, nil
+}
