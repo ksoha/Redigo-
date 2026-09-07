@@ -181,3 +181,84 @@ func (s *Store) LRange(key string, start, end int) ([]string, error) {
 
 	return result, nil
 }
+
+// LPop removes and returns the value from the left (front) of a Redis List.
+func (s *Store) LPop(key string) (string, bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	existingValue, exists := s.data[key]
+
+	// If the key doesn't exist, there is nothing to pop.
+	if !exists {
+		return "", false, nil
+	}
+
+	// Make sure the value is actually a List.
+	list, ok := existingValue.(ListValue)
+	if !ok {
+		return "", false, fmt.Errorf("WRONGTYPE operation against a key holding the wrong kind of value")
+	}
+
+	// If the list is empty, there is nothing to pop.
+	if len(list.Values) == 0 {
+		return "", false, nil
+	}
+
+	// Take the first value.
+	value := list.Values[0]
+
+	// Remove the first value from the list.
+	list.Values = list.Values[1:]
+
+	// If the list becomes empty, remove the key completely.
+	if len(list.Values) == 0 {
+		delete(s.data, key)
+	} else {
+		s.data[key] = list
+	}
+
+	return value, true, nil
+}
+
+// RPop removes and returns the value from the right (end) of a Redis List.
+func (s *Store) RPop(key string) (string, bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	existingValue, exists := s.data[key]
+
+	// If the key doesn't exist, there is nothing to pop.
+	if !exists {
+		return "", false, nil
+	}
+
+	// Make sure the value is actually a List.
+	list, ok := existingValue.(ListValue)
+	if !ok {
+		return "", false, fmt.Errorf("WRONGTYPE operation against a key holding the wrong kind of value")
+	}
+
+	// If the list is empty, there is nothing to pop.
+	if len(list.Values) == 0 {
+		return "", false, nil
+	}
+
+	// Get the last index.
+	lastIndex := len(list.Values) - 1
+
+	// Take the last value.
+	value := list.Values[lastIndex]
+
+	// Remove the last value.
+	list.Values = list.Values[:lastIndex]
+
+	// If the list becomes empty, remove the key completely.
+	if len(list.Values) == 0 {
+		delete(s.data, key)
+	} else {
+		s.data[key] = list
+	}
+
+	return value, true, nil
+}
