@@ -109,6 +109,42 @@ func Dispatch(args []string, s *store.Store, w *bufio.Writer) error {
 
 		return resp.WriteArray(w, values)
 
+	case "LPOP":
+		if len(args) != 2 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'lpop' command")
+		}
+
+		key := args[1]
+
+		value, ok, err := s.LPop(key)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+
+		if !ok {
+			return resp.WriteNullBulkString(w)
+		}
+
+		return resp.WriteBulkString(w, value)
+
+	case "RPOP":
+		if len(args) != 2 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'rpop' command")
+		}
+
+		key := args[1]
+
+		value, ok, err := s.RPop(key)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+
+		if !ok {
+			return resp.WriteNullBulkString(w)
+		}
+
+		return resp.WriteBulkString(w, value)
+
 	default:
 		return resp.WriteError(w, "ERR unknown command '"+cmd+"'")
 	}
