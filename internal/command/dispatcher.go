@@ -145,6 +145,26 @@ func Dispatch(args []string, s *store.Store, w *bufio.Writer) error {
 
 		return resp.WriteBulkString(w, value)
 
+	case "HSET":
+		if len(args) != 4 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'hset' command")
+		}
+
+		key := args[1]
+		field := args[2]
+		value := args[3]
+
+		added, err := s.HSet(key, field, value)
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+
+		if added {
+			return resp.WriteInteger(w, 1)
+		}
+
+		return resp.WriteInteger(w, 0)
+
 	default:
 		return resp.WriteError(w, "ERR unknown command '"+cmd+"'")
 	}
