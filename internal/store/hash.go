@@ -56,3 +56,31 @@ func (s *Store) HSet(key string, field string, value string) (bool, error) {
 
 	return !fieldExists, nil
 }
+
+// HGet retieves the value of a field in a redis hash
+func (s *Store) HGet(key string, field string) (string, bool, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	existingValue, exists := s.data[key]
+
+	//if the redis ket doesnt not exist
+	if !exists {
+		return "", false, nil
+	}
+
+	// The key exists, so check whether it is a HashValue.
+	hash, ok := existingValue.(HashValue)
+	if !ok {
+		return "", false, fmt.Errorf("WRONGTYPE operation against a key holding the wrong kind of value")
+	}
+
+	// Look for the requested field.
+	value, fieldExists := hash.Fields[field]
+
+	if !fieldExists {
+		return "", false, nil
+	}
+
+	return value, true, nil
+}
