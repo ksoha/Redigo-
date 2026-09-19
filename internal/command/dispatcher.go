@@ -184,6 +184,24 @@ func Dispatch(args []string, s *store.Store, w *bufio.Writer) error {
 
 		return resp.WriteBulkString(w, value)
 
+	case "HGETALL":
+		if len(args) != 2 {
+			return resp.WriteError(w, "ERR wrong number of arguments for 'hgetall' command")
+		}
+
+		values, err := s.HGetAll(args[1])
+		if err != nil {
+			return resp.WriteError(w, err.Error())
+		}
+
+		var result []string
+
+		for field, value := range values {
+			result = append(result, field, value)
+		}
+
+		return resp.WriteArray(w, result)
+
 	default:
 		return resp.WriteError(w, "ERR unknown command '"+cmd+"'")
 	}

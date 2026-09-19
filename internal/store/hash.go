@@ -84,3 +84,26 @@ func (s *Store) HGet(key string, field string) (string, bool, error) {
 
 	return value, true, nil
 }
+
+func (s *Store) HGetAll(key string) (map[string]string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	entry, exists := s.data[key]
+	if !exists {
+		return map[string]string{}, nil
+	}
+
+	hash, ok := entry.(HashValue)
+	if !ok {
+		return nil, fmt.Errorf("WRONGTYPE")
+	}
+
+	result := make(map[string]string, len(hash.Fields))
+
+	for field, value := range hash.Fields {
+		result[field] = value
+	}
+
+	return result, nil
+}
